@@ -1,0 +1,96 @@
+package com.example.demo.test;
+
+import ch.qos.logback.core.model.Model;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.swing.*;
+import java.sql.*;
+
+
+@Controller
+@CrossOrigin(origins="*")
+public class test {
+    String jdbcurl = "jdbc:mysql://127.0.0.1:3306/tracker_db" +
+            "";
+    @GetMapping("/start")
+    public String start()
+    {
+        return "login";
+    }
+
+    @PostMapping(value = "/launch",produces = "text/html")
+    public String launch(@RequestParam String button, Model model, @RequestParam("Username") String Username, @RequestParam("Password") String Password){
+        System.out.println("Inside submit method");
+        if(button.equals("Login")){
+            Connection connection =null;
+            try {
+                connection = DriverManager.getConnection(jdbcurl, "root", "root");
+                String sql = "select password from users where name=?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1,Username);
+                ResultSet rs = statement.executeQuery();
+                while(rs.next()){
+                    if(Password.equals(rs.getString("Password"))){
+                        return "/dashboard";
+                    }else{
+                        System.out.println("Wrong credentials");
+                        return "/login";
+                    }
+                }
+
+            }catch (Exception e){
+                System.out.println("Exception is "+e);
+            }}
+            return "/login";
+        }
+
+@GetMapping("/dashboard")
+public String dash()
+{
+    return "dash";
+}
+
+
+    @GetMapping("/register")
+    public String register(){
+        return "signup";
+    }
+    @PostMapping(value = "/signedup",produces = "text/html")
+    public String signedup(@RequestParam("Email") String Email,@RequestParam("Username") String Username,@RequestParam("Password") String Password,@RequestParam("CPassword") String CPassword){
+        System.out.println("Inside submit method");
+
+        Connection connection = null;
+
+        try {
+
+            connection = DriverManager.getConnection(jdbcurl, "root", "root");
+            String sql = "insert into users(name, email, password) VALUES (?,?,?)";
+            Statement statement = connection.prepareStatement(sql);
+            PreparedStatement state= connection.prepareStatement(sql);
+            state.setString(1,Username);
+            state.setString(2,Email);
+            state.setString(3,Password);
+            state.execute();
+            connection.close();
+
+          /*  int row = statement.executeUpdate(sql);
+            if (row > 0) {
+                return "inserted a row";
+
+            } else {
+                return "not inserted a row";
+
+
+        }*/}
+            catch (Exception e) {
+            System.out.println(e);
+        }
+        return "login";
+    }
+
+
+}
