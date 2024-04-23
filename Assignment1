@@ -1,0 +1,101 @@
+package lab;
+import java.sql.*;
+public class Assignment1 {
+	private static final String DB_URL = "jdbc:mysql://localhost:3306/tracker_db";
+    private static final String DB_USER = "root";
+    private static final String DB_PASSWORD = "root";
+
+    public static void main(String[] args) throws ClassNotFoundException {
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+            System.out.println("Connected to database.");
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+         
+
+            
+            createTables(connection);
+
+           
+            insertEmployee(connection, "John Doe", "Full-Time", "Monthly");
+            updateSalary(connection, 1, 5000); 
+            deleteEmployee(connection, 2);
+            displayEmployees(connection);
+        } catch (SQLException e) {
+            System.err.println("Database connection error: " + e.getMessage());
+        }
+    }
+
+    private static void createTables(Connection connection) throws SQLException {
+        String createEmployeesTable = "CREATE TABLE IF NOT EXISTS Employees (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY," +
+                "Name VARCHAR(255) NOT NULL," +
+                "EmployeeType VARCHAR(50) NOT NULL," +
+                "PaymentSchedule VARCHAR(50) NOT NULL" +
+                ")";
+        String createSalariesTable = "CREATE TABLE IF NOT EXISTS Salaries (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY," +
+                "EmployeeID INT NOT NULL," +
+                "SalaryAmount DECIMAL(10, 2) NOT NULL," +
+                "StartDate DATE NOT NULL," +
+                "EndDate DATE," +
+                "FOREIGN KEY (EmployeeID) REFERENCES Employees(ID)" +
+                ")";
+        
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(createEmployeesTable);
+            statement.executeUpdate(createSalariesTable);
+               }
+    }
+
+    private static void insertEmployee(Connection connection, String name, String employeeType, String paymentSchedule) throws SQLException {
+        String insertEmployeeQuery = "INSERT INTO Employees (Name, EmployeeType, PaymentSchedule) VALUES (?, ?, ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertEmployeeQuery)) {
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, employeeType);
+            preparedStatement.setString(3, paymentSchedule);
+            preparedStatement.executeUpdate();
+            System.out.println("Employee inserted successfully.");
+        }
+    }
+
+    private static void updateSalary(Connection connection, int employeeID, double newSalaryAmount) throws SQLException {
+        String updateSalaryQuery = "UPDATE Salaries SET SalaryAmount = ? WHERE EmployeeID = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(updateSalaryQuery)) {
+            preparedStatement.setDouble(1, newSalaryAmount);
+            preparedStatement.setInt(2, employeeID);
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Salary updated successfully.");
+            } else {
+                System.out.println("Employee not found.");
+            }
+        }
+    }
+
+    private static void deleteEmployee(Connection connection, int employeeID) throws SQLException {
+        String deleteEmployeeQuery = "DELETE FROM Employees WHERE ID = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(deleteEmployeeQuery)) {
+            preparedStatement.setInt(1, employeeID);
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Employee deleted successfully.");
+            } else {
+                System.out.println("Employee not found.");
+            }
+        }
+    }
+
+    private static void displayEmployees(Connection connection) throws SQLException {
+        String selectEmployeesQuery = "SELECT * FROM Employees";
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectEmployeesQuery)) {
+            while (resultSet.next()) {
+                int id = resultSet.getInt("ID");
+                String name = resultSet.getString("Name");
+                String employeeType = resultSet.getString("EmployeeType");
+                String paymentSchedule = resultSet.getString("PaymentSchedule");
+                System.out.println("ID: " + id + ", Name: " + name + ", Type: " + employeeType + ", Schedule: " + paymentSchedule);
+            }
+        }
+    }
+}
